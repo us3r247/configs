@@ -1,17 +1,28 @@
 local wezterm = require 'wezterm'
+local config = wezterm.config_builder() -- Better for performance in newer versions
 
-local config = {
-  -- Font
+config = {
+  -- --- Performance Tweaks ---
+  max_fps = 144, -- Higher FPS makes scrolling feel "snappier"
+  animation_fps = 1,
+  webgpu_power_preference = "HighPerformance",
+  front_end = "WebGpu", -- Faster than default on most modern systems
+  
+  -- Disable ligatures for raw speed (as you had with harfbuzz_features)
+  harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
+
+  -- --- Font ---
   font = wezterm.font_with_fallback {
-  "JetBrains Mono",
-  "Symbols Nerd Font Mono",
-  "Noto Color Emoji"},
+    "JetBrains Mono",
+    "Symbols Nerd Font Mono",
+    "Noto Color Emoji"
+  },
   font_size = 11.0,
   adjust_window_size_when_changing_font_size = false,
 
-
-  -- Window/UI settings
+  -- --- Window/UI settings ---
   window_decorations = "RESIZE",
+  window_background_opacity = 1.0, -- Opacity < 1.0 slows down rendering
   hide_tab_bar_if_only_one_tab = false,
   use_fancy_tab_bar = false,
   enable_tab_bar = true,
@@ -21,8 +32,8 @@ local config = {
   initial_rows = 27,
   initial_cols = 100,
 
-  -- Colors
-colors = {
+  -- --- Colors (Preserving your exact OLED theme) ---
+  colors = {
   background = "#000000",     -- OLED black
   foreground = "#e0e6f5",     -- soft steel
 
@@ -65,11 +76,6 @@ colors = {
     },
   },
 },
-
-max_fps = 60,
-animation_fps = 1,
-harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
-
 }
 
 return config
