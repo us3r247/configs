@@ -138,25 +138,5 @@ alias la='ls -A'
 alias l='ls -CF'
 alias python='python3'
 
-# --- Version Managers (LAZY LOAD) ---
-export NVM_DIR="$HOME/.nvm"
+# --- Path Additions ---
 
-# Lazy load nvm (only when you actually use it)
-nvm() {
-  unset -f nvm node npm
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-  nvm "$@"
-}
-
-node() {
-  unset -f nvm node npm
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  node "$@"
-}
-
-npm() {
-  unset -f nvm node npm
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  npm "$@"
-}
