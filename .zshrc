@@ -138,5 +138,8 @@ alias la='ls -A'
 alias l='ls -CF'
 alias python='python3'
 
+# Force Zsh to catch Ctrl+Backspace and delete a word backward
+bindkey '^H' backward-kill-word
+
 # --- Path Additions ---
 
