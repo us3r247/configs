@@ -11,6 +11,8 @@ config = {
   
   -- Disable ligatures for raw speed
   harfbuzz_features = { "calt=0", "clig=0", "liga=0" },
+  -- Pass advanced modifier states straight to Neovim
+	enable_kitty_keyboard = true,
   
   -- --- Font ---
   font = wezterm.font_with_fallback {
