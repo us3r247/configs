@@ -141,5 +141,14 @@ alias python='python3'
 # Force Zsh to catch Ctrl+Backspace and delete a word backward
 bindkey '^H' backward-kill-word
 
+# Bind Ctrl + Right Arrow to move forward one word
+bindkey ';5C' forward-word
+bindkey '^[[1;5C' forward-word
+
+# Bind Ctrl + Left Arrow to move backward one word
+bindkey ';5D' backward-word
+bindkey '^[[1;5D' backward-word
+
+
 # --- Path Additions ---
 
