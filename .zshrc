@@ -71,7 +71,7 @@ precmd() {
 
 # --- PLUGIN 1: Autosuggestions ---
 # Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh.zwc || 
+if [[ ! -f ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh.zwc ||
       ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh -nt ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh.zwc ]]; then
   zcompile ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
@@ -91,16 +91,16 @@ alias less='less -R'
 export LS_COLORS="di=36:ln=35:ex=32:fi=0:*.sh=36:ow=34"
 
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-zstyle ':completion:*' menu select
 
-# Completion Behavior
+# --- Fixed Menu Selection Configuration ---
 zmodload zsh/complist
-setopt AUTO_MENU
-setopt MENU_COMPLETE
+zstyle ':completion:*' menu select   # Turns on the visual grid grid menu
+setopt AUTO_MENU                     # Show menu on successive tabs
+unsetopt MENU_COMPLETE               # Prevents autoselecting the first option blindly
 
 # --- PLUGIN 3: Syntax Highlighting (Load LAST) ---
 # Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh.zwc || 
+if [[ ! -f ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh.zwc ||
       ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh -nt ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh.zwc ]]; then
   zcompile ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
@@ -122,21 +122,21 @@ ZSH_HIGHLIGHT_STYLES[alias]='fg=#a46cc9'
 ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#dea656'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#cb5e66,bold'
 
-# --- PLUGIN 4: History Substring Search (Arrow Keys) ---
+# --- PLUGIN 4: History Substring Search ---
 # Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh.zwc || 
+if [[ ! -f ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh.zwc ||
       ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh -nt ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh.zwc ]]; then
   zcompile ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 fi
 source ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-bindkey "$terminfo[kcuu1]" history-substring-search-up
-bindkey "$terminfo[kcud1]" history-substring-search-down
 
 # --- Aliases ---
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias python='python3'
+
+# --- Key Bindings ---
 
 # Force Zsh to catch Ctrl+Backspace and delete a word backward
 bindkey '^H' backward-kill-word
@@ -149,6 +149,18 @@ bindkey '^[[1;5C' forward-word
 bindkey ';5D' backward-word
 bindkey '^[[1;5D' backward-word
 
+# Substring Search Bindings (Fallback setup using terminfo)
+[[ -n "${terminfo[kcuu1]}" ]] && bindkey "${terminfo[kcuu1]}" history-substring-search-up
+[[ -n "${terminfo[kcud1]}" ]] && bindkey "${terminfo[kcud1]}" history-substring-search-down
+
+# Substring Search Bindings (Universal escape codes)
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# Allow arrow keys to navigate completion menus when a menu is active
+bindkey -M menuselect '^[[A' up-line-or-history
+bindkey -M menuselect '^[[B' down-line-or-history
+bindkey -M menuselect '^[[C' forward-char
+bindkey -M menuselect '^[[D' backward-char
 
 # --- Path Additions ---
-
