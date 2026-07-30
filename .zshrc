@@ -1,110 +1,162 @@
-# --- Auto-Recompile .zshrc if modified ---
+# ==============================================================================
+#                                ~/.zshrc
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Auto-compile .zshrc
+# ------------------------------------------------------------------------------
+# Helper function to compile plugins (Defined first so zsh knows it exists)
+compile_if_needed() {
+    local file="$1"
+    [[ -f "$file" ]] || return
+    [[ ! -f "${file}.zwc" || "$file" -nt "${file}.zwc" ]] && zcompile "$file"
+}
+
 if [[ ! -f ~/.zshrc.zwc || ~/.zshrc -nt ~/.zshrc.zwc ]]; then
-  zcompile ~/.zshrc
+    zcompile ~/.zshrc
 fi
 
-# --- Performance: Explicit typeset for Highlighting (Prevents Error 71) ---
+# Prevent Error 71 from zsh-syntax-highlighting
 typeset -gA ZSH_HIGHLIGHT_STYLES
 
-# --- Editor ---
-export EDITOR=gedit
-export VISUAL=gedit
-export GIT_EDITOR="$EDITOR"
+# ------------------------------------------------------------------------------
+# Editor
+# ------------------------------------------------------------------------------
+export EDITOR=nvim
+export VISUAL=nvim
+export GIT_EDITOR=nvim
 
-# --- Locales ---
+# ------------------------------------------------------------------------------
+# Locale
+# ------------------------------------------------------------------------------
 export LANG=en_IN.UTF-8
 export LC_ALL=en_IN.UTF-8
 
-# --- History Configuration ---
-HISTFILE=~/.zsh_history
-HISTSIZE=5000
-SAVEHIST=5000
-setopt APPEND_HISTORY
-setopt HIST_IGNORE_DUPS
-setopt HIST_REDUCE_BLANKS
-setopt INC_APPEND_HISTORY
-setopt SHARE_HISTORY
-setopt HIST_FIND_NO_DUPS
+# ------------------------------------------------------------------------------
+# History
+# ------------------------------------------------------------------------------
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
 
-# --- Autocompletion (Maximum Speed) ---
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+setopt HIST_FIND_NO_DUPS
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt EXTENDED_HISTORY
+setopt HIST_VERIFY
+
+# ------------------------------------------------------------------------------
+# Useful shell options
+# ------------------------------------------------------------------------------
+setopt AUTO_CD
+setopt COMPLETE_IN_WORD
+setopt INTERACTIVE_COMMENTS
+setopt AUTO_MENU
+unsetopt MENU_COMPLETE
+
+# ------------------------------------------------------------------------------
+# Completion
+# ------------------------------------------------------------------------------
 autoload -Uz compinit
+
 zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
 
-# Rebuild cache only once a day OR if .zshrc changed
 if [[ ! -f "$zcompdump" || ! -s "$zcompdump" || "$zcompdump" -ot ~/.zshrc ]]; then
-  compinit -d "$zcompdump"
-  # Compile immediately after rebuilding
-  zcompile "$zcompdump"
-else
-  compinit -C -d "$zcompdump"
-  # Auto-recompile dump if source is newer than compiled version
-  if [[ ! -f "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc" ]]; then
+    compinit -d "$zcompdump"
     zcompile "$zcompdump"
-  fi
+else
+    compinit -C -d "$zcompdump"
+
+    if [[ ! -f "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc" ]]; then
+        zcompile "$zcompdump"
+    fi
 fi
 
-# --- Color Support ---
+mkdir -p ~/.zsh/cache
+
+zstyle ':completion:*' use-cache yes
+zstyle ':completion:*' cache-path ~/.zsh/cache
+
+zstyle ':completion:*' menu select
+
+zstyle ':completion:*' matcher-list \
+    'm:{a-z}={A-Z}' \
+    'r:|=*' \
+    'l:|=*'
+
+zmodload zsh/complist
+
+# ------------------------------------------------------------------------------
+# Colors
+# ------------------------------------------------------------------------------
 autoload -Uz colors && colors
+
+if command -v dircolors >/dev/null 2>&1; then
+    eval "$(dircolors -b)"
+fi
+
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
 # --- Git Support (Native & Fast) ---
 autoload -Uz vcs_info
 setopt prompt_subst
 zstyle ':vcs_info:*' enable git
-zstyle ':vcs_info:git:*' formats ' %B%F{yellow}(%b)%f%%b'
-zstyle ':vcs_info:*' check-for-changes false  # Disable expensive checks
+
+# FIXED: Removed the accidental '%%b' formatting bug causing duplication
+zstyle ':vcs_info:git:*' formats ' %B%F{yellow}(%b)%f'
+zstyle ':vcs_info:*' check-for-changes false  
 zstyle ':vcs_info:*' check-for-staged-changes false
 
 # --- Prompt (Updated with Git) ---
-PROMPT='%B%F{magenta}%n@%m%f:%F{blue}%~%f%b${vcs_info_msg_0_}$ '
+PROMPT='%B%F{magenta}%n@%m%f:%F{blue}%~%f%b${vcs_info_msg_0_}
+$ '
 
-# --- precmd hook for vcs_info ---
 precmd() {
-  vcs_info
-  # Timing information (only on first launch)
-  if [[ -f /tmp/launch_start ]]; then
-    local start=$(cat /tmp/launch_start)
-    local now=$(date +%s%3N)
-    echo "\e[1;33mTotal Launch Time: $((now - start))ms\e[0m"
-    rm /tmp/launch_start
-  fi
+    vcs_info
+
+    if [[ -f /tmp/launch_start ]]; then
+        local start=$(cat /tmp/launch_start)
+        local now=$(date +%s%3N)
+
+        echo "\e[1;33mTotal Launch Time: $((now-start))ms\e[0m"
+
+        rm /tmp/launch_start
+    fi
 }
 
-# --- PLUGIN 1: Autosuggestions ---
-# Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh.zwc ||
-      ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh -nt ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh.zwc ]]; then
-  zcompile ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-fi
+# ------------------------------------------------------------------------------
+# Plugin Paths
+# ------------------------------------------------------------------------------
+fpath=(
+    ~/.zsh_plugins/zsh-completions/src
+    $fpath
+)
+
+# ------------------------------------------------------------------------------
+# Plugin 1 - Autosuggestions
+# ------------------------------------------------------------------------------
+compile_if_needed ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#585b70'
 
-# --- PLUGIN 2: Completions (External Contrib) ---
-fpath=(~/.zsh_plugins/zsh-completions/src $fpath)
+# ------------------------------------------------------------------------------
+# Plugin 2 - History Substring Search
+# ------------------------------------------------------------------------------
+compile_if_needed ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+source ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
 
-# --- Color Output & LS_COLORS (Original Theme) ---
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-alias egrep='egrep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias ip='ip --color=auto'
-alias less='less -R'
-export LS_COLORS="di=36:ln=35:ex=32:fi=0:*.sh=36:ow=34"
-
-zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
-
-# --- Fixed Menu Selection Configuration ---
-zmodload zsh/complist
-zstyle ':completion:*' menu select   # Turns on the visual grid grid menu
-setopt AUTO_MENU                     # Show menu on successive tabs
-unsetopt MENU_COMPLETE               # Prevents autoselecting the first option blindly
-
-# --- PLUGIN 3: Syntax Highlighting (Load LAST) ---
-# Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh.zwc ||
-      ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh -nt ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh.zwc ]]; then
-  zcompile ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
+# ------------------------------------------------------------------------------
+# Plugin 3 - Syntax Highlighting (MUST BE LAST)
+# ------------------------------------------------------------------------------
+compile_if_needed ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source ~/.zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
 ZSH_HIGHLIGHT_STYLES[command]='fg=#4caf50'
 ZSH_HIGHLIGHT_STYLES[arg0]='fg=#6182e0'
 ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=#dea656'
@@ -122,45 +174,67 @@ ZSH_HIGHLIGHT_STYLES[alias]='fg=#a46cc9'
 ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#dea656'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#cb5e66,bold'
 
-# --- PLUGIN 4: History Substring Search ---
-# Auto-compile plugin if needed
-if [[ ! -f ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh.zwc ||
-      ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh -nt ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh.zwc ]]; then
-  zcompile ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-fi
-source ~/.zsh_plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-
-# --- Aliases ---
+# ------------------------------------------------------------------------------
+# Aliases
+# ------------------------------------------------------------------------------
+alias ls='ls --color=auto --group-directories-first'
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
+
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias diff='diff --color=auto'
+alias less='less -R'
+alias ip='ip --color=auto'
+
 alias python='python3'
 
-# --- Key Bindings ---
+# ------------------------------------------------------------------------------
+# Keybindings
+# ------------------------------------------------------------------------------
+zmodload zsh/terminfo
 
-# Force Zsh to catch Ctrl+Backspace and delete a word backward
 bindkey '^H' backward-kill-word
 
-# Bind Ctrl + Right Arrow to move forward one word
-bindkey ';5C' forward-word
-bindkey '^[[1;5C' forward-word
+# Ctrl + Arrow
+[[ -n "$terminfo[kRIT5]" ]] && bindkey "$terminfo[kRIT5]" forward-word
+[[ -n "$terminfo[kLFT5]" ]] && bindkey "$terminfo[kLFT5]" backward-word
 
-# Bind Ctrl + Left Arrow to move backward one word
-bindkey ';5D' backward-word
+bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
 
-# Substring Search Bindings (Fallback setup using terminfo)
-[[ -n "${terminfo[kcuu1]}" ]] && bindkey "${terminfo[kcuu1]}" history-substring-search-up
-[[ -n "${terminfo[kcud1]}" ]] && bindkey "${terminfo[kcud1]}" history-substring-search-down
+# Alt + Arrow
+bindkey '^[^[[C' forward-word
+bindkey '^[^[[D' backward-word
 
-# Substring Search Bindings (Universal escape codes)
+# History substring search
+[[ -n "$terminfo[kcuu1]" ]] && bindkey "$terminfo[kcuu1]" history-substring-search-up
+[[ -n "$terminfo[kcud1]" ]] && bindkey "$terminfo[kcud1]" history-substring-search-down
+
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
+bindkey '^[OA' history-substring-search-up
+bindkey '^[OB' history-substring-search-down
 
-# Allow arrow keys to navigate completion menus when a menu is active
+# Completion menu navigation
 bindkey -M menuselect '^[[A' up-line-or-history
 bindkey -M menuselect '^[[B' down-line-or-history
 bindkey -M menuselect '^[[C' forward-char
 bindkey -M menuselect '^[[D' backward-char
 
-# --- Path Additions ---
+# ------------------------------------------------------------------------------
+# PATH
+# ------------------------------------------------------------------------------
+path=(
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+    $path
+)
+
+export PATH
+
+# ------------------------------------------------------------------------------
+# End
+# ------------------------------------------------------------------------------
